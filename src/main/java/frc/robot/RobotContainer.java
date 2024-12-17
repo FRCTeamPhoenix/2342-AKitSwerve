@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -29,10 +30,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.photon.Photon;
 import frc.robot.subsystems.photon.PhotonIO;
 import frc.robot.subsystems.photon.PhotonIOReal;
 import frc.robot.subsystems.photon.PhotonIOSim;
-import frc.robot.subsystems.photon.Photon;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -44,7 +45,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Photon photonClass;
+  private final Photon photon;
+
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
@@ -56,53 +58,48 @@ public class RobotContainer {
     switch (Constants.CURRENT_MODE) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
-        PhotonIOReal realFrontCam =
-            new PhotonIOReal(
-                Constants.VisionConstants.FRONT_CAMERA_NAME,
-                Constants.VisionConstants.FRONT_TRANSFORM);
-        PhotonIO[] realCams = {realFrontCam};
-        photonClass = new Photon(realCams);
         drive =
             new Drive(
                 new GyroIOPigeon2(),
                 new ModuleIOTalonFX(0),
                 new ModuleIOTalonFX(1),
                 new ModuleIOTalonFX(2),
-                new ModuleIOTalonFX(3),
-                photonClass);
+                new ModuleIOTalonFX(3));
+        photon =
+            new Photon(
+                drive::addVisionMeasurement,
+                new PhotonIOReal(
+                    VisionConstants.FRONT_CAMERA_NAME, VisionConstants.FRONT_TRANSFORM));
         break;
 
       case SIM:
         // Sim robot, instantiate physics sim IO implementations
-        PhotonIOSim frontSimCam =
-            new PhotonIOSim(
-                Constants.VisionConstants.FRONT_CAMERA_NAME,
-                Constants.VisionConstants.FRONT_TRANSFORM);
-        PhotonIO[] simCams = {frontSimCam};
-        photonClass = new Photon(simCams);
         drive =
             new Drive(
                 new GyroIO() {},
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
-                new ModuleIOSim(),
-                photonClass);
+                new ModuleIOSim());
+        photon =
+            new Photon(
+                drive::addVisionMeasurement,
+                new PhotonIOSim(
+                    VisionConstants.FRONT_CAMERA_NAME,
+                    VisionConstants.test_Transform,
+                    drive::getPose));
         break;
 
       default:
-        // Replayed robot, disable IO implementation
-        PhotonIO frontReplayCam = new PhotonIO() {};
-        PhotonIO[] replayCams = {frontReplayCam};
-        photonClass = new Photon(replayCams);
+        // Replayed robot, disable IO implementations
         drive =
             new Drive(
                 new GyroIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {},
-                new ModuleIO() {},
-                photonClass);
+                new ModuleIO() {});
+        photon = new Photon(drive::addVisionMeasurement, new PhotonIO() {});
         break;
     }
 
@@ -157,5 +154,17 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
+  }
+
+  public Drive getDrive() {
+    return drive;
+  }
+
+  public Photon getPhoton() {
+    return photon;
+  }
+
+  public CommandXboxController getController() {
+    return controller;
   }
 }

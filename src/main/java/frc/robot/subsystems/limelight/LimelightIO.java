@@ -1,5 +1,3 @@
 package frc.robot.subsystems.limelight;
 
-public class LimelightIO {
-    
-}
+public class LimelightIO {}
