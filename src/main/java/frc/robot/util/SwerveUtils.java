@@ -86,21 +86,22 @@ public class SwerveUtils {
     return new ChassisSpeeds(rotated.getX(), rotated.getY(), omegaRadiansPerSecond);
   }
 
+  /*
+   * Extended feedforward class to keep calculate using double input
+   */
   public static class PhoenixFF extends SimpleMotorFeedforward {
 
     double ks;
     double kv;
-    double ka;
 
     public PhoenixFF(double ks, double kv) {
       super(ks, kv);
-      ks = super.getKs();
-      kv = super.getKv();
-      ka = super.getKa();
+      this.ks = ks;
+      this.kv = kv;
     }
 
     public double simpleCalculate(double velocity) {
-      return ks * Math.signum(velocity) + kv * velocity + ka * 0;
+      return ks * Math.signum(velocity) + kv * velocity;
     }
   }
 }
