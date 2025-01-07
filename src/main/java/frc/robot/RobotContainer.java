@@ -21,8 +21,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -32,8 +32,8 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.photon.Photon;
 import frc.robot.subsystems.photon.PhotonIO;
-import frc.robot.subsystems.photon.PhotonIOReal;
-import frc.robot.subsystems.photon.PhotonIOSim;
+// import frc.robot.subsystems.photon.PhotonIOReal;
+// import frc.robot.subsystems.photon.PhotonIOSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -50,6 +50,10 @@ public class RobotContainer {
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
+  // Triggers
+  Trigger bTrigger = controller.b();
+  Trigger xTrigger = controller.x();
+
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
@@ -65,11 +69,7 @@ public class RobotContainer {
                 new ModuleIOTalonFX(1),
                 new ModuleIOTalonFX(2),
                 new ModuleIOTalonFX(3));
-        photon =
-            new Photon(
-                drive::addVisionMeasurement,
-                new PhotonIOReal(
-                    VisionConstants.FRONT_CAMERA_NAME, VisionConstants.FRONT_TRANSFORM));
+        photon = new Photon(drive::addVisionMeasurement, new PhotonIO() {});
         break;
 
       case SIM:
@@ -81,13 +81,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
-        photon =
-            new Photon(
-                drive::addVisionMeasurement,
-                new PhotonIOSim(
-                    VisionConstants.FRONT_CAMERA_NAME,
-                    VisionConstants.test_Transform,
-                    drive::getPose));
+        photon = new Photon(drive::addVisionMeasurement, new PhotonIO() {});
+
         break;
 
       default:
@@ -135,16 +130,12 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-    controller
-        .b()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
-                    drive)
-                .ignoringDisable(true));
+    xTrigger.onTrue(Commands.runOnce(drive::stopWithX, drive));
+    bTrigger.onTrue(
+        Commands.runOnce(
+                () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
+                drive)
+            .ignoringDisable(true));
   }
 
   /**
